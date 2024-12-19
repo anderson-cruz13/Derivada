@@ -1,68 +1,68 @@
-import numpy as np
+from typing import Callable as Callab
 import matplotlib.pyplot as plt
-from sympy import symbols, diff, solve  # type: ignore
-from typing import Any
+import numpy as np
 
 
-x: Any = symbols("x")
-equacao: Any = x**2 + 2
-equacao_resolvida: Any = solve(equacao, x)
-derivada: Any = diff(equacao, x)
+def f(x: float) -> float:
+    return x ** 2 + 2
 
-a: float = 3.0
-b: float = 2.0
-yA: float = equacao.subs(x, a)
-yB: float = equacao.subs(x, b)
 
-taxa_media: float = (yB - yA) / (b - a)
+def f_derivada(
+        f: Callab[[float], float],
+        x: float) -> float:
 
-relativo_erro_direito: float = taxa_media - (taxa_media * 0.01)
-relativo_erro_esquerdo: float = taxa_media + (taxa_media * 0.01)
+    h: float = 1e-6
+    return (f(x + h) - f(x)) / h
 
-calculo: float = 0.0
-point_x: float = 0.0
 
-while not (relativo_erro_direito <= calculo <= relativo_erro_esquerdo):
-    point_x += 0.1
-    calculo = derivada.subs(x, point_x)
-    if abs(calculo - taxa_media) < 0.01:
-        break
+def tangente_f(
+        f: Callab[[float], float],
+        a: float, b: float,
+        taxa: float,
+        tolerancia: float = 1e-3) -> float | None:
 
-# Definindo os pontos para plotagem
-x_vals = np.linspace(a - 1, b + 1, 500)
-y_vals = [float(equacao.subs(x, val)) for val in x_vals]
-point_y = float(equacao.subs(x, point_x))
+    h: float = 1e-6
+    passo = h if b > a else -h
+    c: float = a + passo
+    derivada = f_derivada(f, c)
 
-# Plotagem
-plt.figure(figsize=(10, 6))
+    while derivada < taxa:
+        c = c + passo
+        derivada = f_derivada(f, c)
 
-# Gráfico da equação
-plt.plot(x_vals, y_vals, label="Equação $f(x) = x^2 + 2$", color="blue")
+    return c
 
-# Segmento no intervalo [a, b]
-plt.plot(
-        [a, b], [yA, yB], label="Segmento [$a, b$]", color="green",
-        linestyle="--")
 
-# Tangente no ponto c
-tangent_slope = float(derivada.subs(x, point_x))
-tangent_y = tangent_slope * (x_vals - point_x) + point_y
-plt.plot(
-        x_vals, tangent_y, label=f"Tangente no ponto $c={point_x:.2f}$",
-        color="red", linestyle=":")
+a: float = -2
+b: float = 2
 
-# Destaques para os pontos
-plt.scatter([a, b, point_x], [yA, yB, point_y], color="black", zorder=5)
-plt.text(a, yA, f"A({a:.1f}, {yA:.1f})", fontsize=9)
-plt.text(b, yB, f"B({b:.1f}, {yB:.1f})", fontsize=9)
-plt.text(point_x, point_y, f"C({point_x:.1f}, {point_y:.1f})", fontsize=9)
+try:
+    taxa: float = (f(b) - f(a)) / (b - a)
+except ZeroDivisionError:
+    print('Divisão por zero')
+    exit(1)
 
-# Configurações do gráfico
-plt.title("Gráfico da Equação, Segmento [$a, b$] e Tangente no Ponto $c$")
-plt.xlabel("$x$")
-plt.ylabel("$f(x)$")
-plt.axhline(0, color="black", linewidth=0.5, linestyle="--")
-plt.axvline(0, color="black", linewidth=0.5, linestyle="--")
-plt.grid(alpha=0.3)
-plt.legend()
-plt.show()
+c: float | None = tangente_f(f, a, b, taxa)
+
+if __name__ == '__main__':
+    plt.axvline(0, color='black', linestyle='--')
+    plt.axhline(0, color='black', linestyle='--')
+    plt.grid(True)
+
+    x = np.linspace(a - 2, b + 2, 100)
+    y = f(x)  # type: ignore
+    plt.plot(x, y, label='Função f(x)', color='blue')
+
+    secante_y = f(a) + taxa * (x - a)
+    plt.plot(x, secante_y, label='Secante (Taxa)', color='red', linestyle='--')
+
+    plt.scatter(a, f(a), color='green', label='Ponto A')
+    plt.scatter(b, f(b), color='red', label='Ponto B')
+
+    if c is not None:
+        plt.scatter(c, f(c), color='orange', label='Ponto C')
+        tangente_y = f(c) + f_derivada(f, c) * (x - c)
+        plt.plot(x, tangente_y, label='Tangente', color='green', linestyle=':')
+
+    plt.legend()
+    plt.show()
