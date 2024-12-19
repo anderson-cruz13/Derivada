@@ -18,23 +18,22 @@ def f_derivada(
 def tangente_f(
         f: Callab[[float], float],
         a: float, b: float,
-        taxa: float,
-        tolerancia: float = 1e-3) -> float | None:
+        taxa: float) -> float | None:
 
     h: float = 1e-6
     passo = h if b > a else -h
     c: float = a + passo
     derivada = f_derivada(f, c)
 
-    while derivada < taxa:
+    while derivada <= taxa:
         c = c + passo
         derivada = f_derivada(f, c)
 
     return c
 
 
-a: float = -2
-b: float = 2
+a: float = -1
+b: float = 1
 
 try:
     taxa: float = (f(b) - f(a)) / (b - a)
